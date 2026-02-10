@@ -1,7 +1,12 @@
-const express = require('express');
-const path = require('path');
-const { Blockchain, Transaction, generateKeyPair } = require('./blockchain');
-const { MiningMachine } = require('./miningMachine');
+import crypto from 'crypto';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { Blockchain, Transaction, generateKeyPair } from './blockchain.js';
+import { MiningMachine } from './miningMachine.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
@@ -16,7 +21,7 @@ const miners = new Map();
 app.post('/api/miner/register', (req, res) => {
   const { powerMode } = req.body;
   const keyPair = generateKeyPair();
-  const minerId = require('crypto').randomBytes(8).toString('hex');
+  const minerId = crypto.randomBytes(8).toString('hex');
 
   const machine = new MiningMachine({
     keyPair,

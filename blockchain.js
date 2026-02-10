@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 // Generate a key pair for transaction signing
 function generateKeyPair() {
@@ -168,4 +168,4 @@ class Block {
   }
 }
 
-module.exports = { Blockchain, Transaction, generateKeyPair, sign, verify, Block };
+export { Blockchain, Transaction, generateKeyPair, sign, verify, Block };

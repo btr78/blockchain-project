@@ -1,5 +1,5 @@
-const crypto = require('crypto');
-const { Blockchain, Block, Transaction, generateKeyPair } = require('./blockchain');
+import crypto from 'crypto';
+import { Blockchain, Block, Transaction, generateKeyPair } from './blockchain.js';
 
 class MiningMachine {
   constructor(options = {}) {
@@ -216,4 +216,4 @@ class MiningMachine {
   }
 }
 
-module.exports = { MiningMachine };
+export { MiningMachine };
