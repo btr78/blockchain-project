@@ -45,6 +45,8 @@
     .status-idle { background: #333; color: #888; }
     .status-mining { background: #0a3d0a; color: #4ade80; }
     .status-connected { background: #1a1a3d; color: #818cf8; }
+    .status-btc { background: #3d2a0a; color: #f7931a; }
+    .status-xmr { background: #2a1a0a; color: #ff6600; }
 
     .card {
       background: #111;
@@ -77,6 +79,83 @@
       margin-top: 2px;
     }
     .stat-highlight { color: #4ade80; }
+    .stat-btc { color: #f7931a; }
+    .stat-xmr { color: #ff6600; }
+
+    /* Coin selector */
+    .coin-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .coin-btn {
+      flex: 1;
+      padding: 14px 8px;
+      border: 2px solid #333;
+      border-radius: 12px;
+      background: transparent;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      text-align: center;
+    }
+    .coin-btn .coin-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+    .coin-btn .coin-algo { font-size: 10px; color: #666; display: block; margin-top: 2px; }
+    .coin-btn.active-btc { border-color: #f7931a; background: #3d2a0a; color: #f7931a; }
+    .coin-btn.active-btc .coin-algo { color: #f7931a99; }
+    .coin-btn.active-xmr { border-color: #ff6600; background: #2a1a0a; color: #ff6600; }
+    .coin-btn.active-xmr .coin-algo { color: #ff660099; }
+    .coin-btn.active-local { border-color: #818cf8; background: #1a1a3d; color: #818cf8; }
+    .coin-btn.active-local .coin-algo { color: #818cf899; }
+
+    /* Pool config */
+    .pool-config { display: none; }
+    .pool-config.visible { display: block; }
+    .pool-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #333;
+      border-radius: 10px;
+      background: #0a0a0a;
+      color: #fff;
+      font-size: 14px;
+      font-family: inherit;
+      margin-bottom: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .pool-input:focus { border-color: #555; }
+    .pool-input::placeholder { color: #444; }
+
+    .pool-presets {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .pool-preset-btn {
+      padding: 6px 12px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: transparent;
+      color: #888;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pool-preset-btn:active { background: #222; }
+    .pool-preset-btn.selected { border-color: #4ade80; color: #4ade80; background: #0a3d0a; }
+
+    .pool-note {
+      font-size: 11px;
+      color: #555;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
 
     .power-modes {
       display: flex;
@@ -116,6 +195,14 @@
     }
     .mine-btn.start {
       background: linear-gradient(135deg, #4ade80, #22c55e);
+      color: #000;
+    }
+    .mine-btn.start-btc {
+      background: linear-gradient(135deg, #f7931a, #e8850f);
+      color: #000;
+    }
+    .mine-btn.start-xmr {
+      background: linear-gradient(135deg, #ff6600, #e85d00);
       color: #000;
     }
     .mine-btn.stop {
@@ -162,6 +249,8 @@
     }
     .log-entry.success { color: #4ade80; }
     .log-entry.error { color: #ef4444; }
+    .log-entry.btc { color: #f7931a; }
+    .log-entry.xmr { color: #ff6600; }
 
     .chain-info {
       display: flex;
@@ -170,6 +259,8 @@
     }
     .chain-info span:first-child { color: #666; font-size: 13px; }
     .chain-info span:last-child { font-weight: 600; font-size: 13px; }
+
+    .hidden { display: none !important; }
 
     @media (prefers-color-scheme: dark) {
       body { background: #000; }
@@ -183,6 +274,36 @@
     <div id="statusBadge" class="status-badge status-idle">IDLE</div>
   </div>
 
+  <!-- Coin Selection -->
+  <div class="card">
+    <div class="card-title">Select Coin</div>
+    <div class="coin-selector">
+      <button class="coin-btn" data-coin="btc" onclick="selectCoin('btc')">
+        <span class="coin-icon">&#x20BF;</span>Bitcoin
+        <span class="coin-algo">SHA-256d</span>
+      </button>
+      <button class="coin-btn" data-coin="xmr" onclick="selectCoin('xmr')">
+        <span class="coin-icon">&#x24E7;</span>Monero
+        <span class="coin-algo">RandomX</span>
+      </button>
+      <button class="coin-btn" data-coin="local" onclick="selectCoin('local')">
+        <span class="coin-icon">&#x26D3;</span>Local
+        <span class="coin-algo">Custom</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Pool Configuration (for BTC/XMR) -->
+  <div id="poolConfig" class="card pool-config">
+    <div class="card-title">Pool Configuration</div>
+    <div id="poolPresets" class="pool-presets"></div>
+    <input type="text" id="poolUrl" class="pool-input" placeholder="Pool address (host:port)">
+    <input type="text" id="walletAddress" class="pool-input" placeholder="Wallet address">
+    <input type="text" id="workerName" class="pool-input" placeholder="Worker name (default: phone)" value="phone">
+    <div id="poolNote" class="pool-note"></div>
+  </div>
+
+  <!-- Mining Stats -->
   <div class="card">
     <div class="card-title">Mining Stats</div>
     <div class="stats-grid">
@@ -192,20 +313,21 @@
       </div>
       <div class="stat-item">
         <div class="stat-value" id="blocksMined">0</div>
-        <div class="stat-label">Blocks Mined</div>
+        <div class="stat-label" id="blocksLabel">Blocks Mined</div>
       </div>
       <div class="stat-item">
         <div class="stat-value stat-highlight" id="totalRewards">0</div>
-        <div class="stat-label">Rewards Earned</div>
+        <div class="stat-label" id="rewardsLabel">Rewards Earned</div>
       </div>
       <div class="stat-item">
         <div class="stat-value" id="balance">0</div>
-        <div class="stat-label">Balance</div>
+        <div class="stat-label" id="balanceLabel">Balance</div>
       </div>
     </div>
   </div>
 
-  <div class="card">
+  <!-- Power Mode (for local mining) -->
+  <div id="powerModeCard" class="card hidden">
     <div class="card-title">Power Mode</div>
     <div class="power-modes">
       <button class="power-btn" data-mode="low" onclick="setPowerMode('low')">
@@ -220,14 +342,16 @@
     </div>
   </div>
 
+  <!-- Action Buttons -->
   <button id="mineBtn" class="mine-btn start" onclick="toggleMining()" disabled>
-    Connect to Start
+    Select a Coin to Start
   </button>
-  <button id="mineSingleBtn" class="mine-single-btn" onclick="mineSingleBlock()" disabled>
+  <button id="mineSingleBtn" class="mine-single-btn hidden" onclick="mineSingleBlock()" disabled>
     Mine Single Block
   </button>
 
-  <div class="card">
+  <!-- Blockchain Info (for local mining) -->
+  <div id="chainInfoCard" class="card hidden">
     <div class="card-title">Blockchain</div>
     <div class="chain-info">
       <span>Chain Length</span>
@@ -247,28 +371,61 @@
     </div>
   </div>
 
+  <!-- Pool Info (for pool mining) -->
+  <div id="poolInfoCard" class="card hidden">
+    <div class="card-title" id="poolInfoTitle">Pool Info</div>
+    <div class="chain-info">
+      <span>Shares Accepted</span>
+      <span id="sharesAccepted">0</span>
+    </div>
+    <div class="chain-info">
+      <span>Shares Rejected</span>
+      <span id="sharesRejected">0</span>
+    </div>
+    <div class="chain-info">
+      <span>Difficulty</span>
+      <span id="poolDifficulty">-</span>
+    </div>
+    <div class="chain-info">
+      <span>Current Job</span>
+      <span id="currentJob">-</span>
+    </div>
+  </div>
+
+  <!-- Mining Log -->
   <div class="card">
     <div class="card-title">Mining Log</div>
     <div class="log" id="miningLog"></div>
   </div>
 
   <script>
-    let minerId = null;
+    // State
+    let selectedCoin = null; // 'btc', 'xmr', 'local'
+    let minerId = null;      // Local miner ID
+    let poolId = null;       // Pool miner ID
     let isMining = false;
+    let isConnected = false;
     let statsInterval = null;
+    let logInterval = null;
+    let lastLogTime = 0;
+    let poolDefaults = null;
 
     const mineBtn = document.getElementById('mineBtn');
     const mineSingleBtn = document.getElementById('mineSingleBtn');
     const statusBadge = document.getElementById('statusBadge');
 
+    // ---- Logging ----
+
     function log(message, type = '') {
       const logEl = document.getElementById('miningLog');
       const entry = document.createElement('div');
       entry.className = 'log-entry' + (type ? ' ' + type : '');
-      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      entry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
       logEl.prepend(entry);
       if (logEl.children.length > 50) logEl.removeChild(logEl.lastChild);
     }
+
+    // ---- API Helper ----
 
     async function api(path, options = {}) {
       const res = await fetch('/api' + path, {
@@ -279,86 +436,306 @@
       return res.json();
     }
 
-    async function register() {
+    // ---- Coin Selection ----
+
+    async function selectCoin(coin) {
+      // Stop any current mining
+      if (isMining) await stopMining();
+      if (poolId) {
+        await api('/pool/' + poolId + '/disconnect', { method: 'POST' });
+        poolId = null;
+      }
+
+      selectedCoin = coin;
+
+      // Update coin button styles
+      document.querySelectorAll('.coin-btn').forEach(btn => {
+        btn.className = 'coin-btn';
+      });
+      const activeBtn = document.querySelector('[data-coin="' + coin + '"]');
+      activeBtn.classList.add('active-' + coin);
+
+      // Show/hide sections based on coin type
+      const isPool = coin === 'btc' || coin === 'xmr';
+      document.getElementById('poolConfig').classList.toggle('visible', isPool);
+      document.getElementById('powerModeCard').classList.toggle('hidden', isPool);
+      document.getElementById('chainInfoCard').classList.toggle('hidden', isPool);
+      document.getElementById('poolInfoCard').classList.toggle('hidden', !isPool);
+      mineSingleBtn.classList.toggle('hidden', isPool);
+
+      // Update stat labels
+      if (isPool) {
+        document.getElementById('blocksLabel').textContent = 'Shares Sent';
+        document.getElementById('rewardsLabel').textContent = 'Accepted';
+        document.getElementById('balanceLabel').textContent = 'Rejected';
+        setupPoolPresets(coin);
+      } else {
+        document.getElementById('blocksLabel').textContent = 'Blocks Mined';
+        document.getElementById('rewardsLabel').textContent = 'Rewards Earned';
+        document.getElementById('balanceLabel').textContent = 'Balance';
+      }
+
+      // Reset stats display
+      document.getElementById('hashRate').textContent = '0';
+      document.getElementById('blocksMined').textContent = '0';
+      document.getElementById('totalRewards').textContent = '0';
+      document.getElementById('balance').textContent = '0';
+
+      // Update highlight colors
+      const highlights = document.querySelectorAll('.stat-highlight');
+      highlights.forEach(el => {
+        el.classList.remove('stat-btc', 'stat-xmr');
+        if (coin === 'btc') el.classList.add('stat-btc');
+        else if (coin === 'xmr') el.classList.add('stat-xmr');
+      });
+
+      if (isPool) {
+        mineBtn.disabled = false;
+        mineBtn.textContent = 'Connect to Pool';
+        mineBtn.className = 'mine-btn start-' + coin;
+        statusBadge.textContent = coin.toUpperCase() + ' SELECTED';
+        statusBadge.className = 'status-badge status-' + coin;
+        isConnected = false;
+      } else {
+        // Local mining - auto register
+        await registerLocal();
+      }
+
+      log('Selected ' + (coin === 'btc' ? 'Bitcoin' : coin === 'xmr' ? 'Monero' : 'Local') + ' mining', coin);
+    }
+
+    // ---- Pool Presets ----
+
+    async function setupPoolPresets(coin) {
+      if (!poolDefaults) {
+        poolDefaults = await api('/pool/defaults');
+      }
+
+      const config = poolDefaults[coin];
+      if (!config) return;
+
+      const presetsEl = document.getElementById('poolPresets');
+      presetsEl.innerHTML = '';
+
+      config.pools.forEach((pool, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'pool-preset-btn';
+        btn.textContent = pool.name;
+        btn.onclick = () => {
+          document.getElementById('poolUrl').value = pool.url;
+          document.querySelectorAll('.pool-preset-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          document.getElementById('poolNote').textContent = pool.note;
+        };
+        presetsEl.appendChild(btn);
+
+        // Auto-select first preset
+        if (i === 0) {
+          document.getElementById('poolUrl').value = pool.url;
+          btn.classList.add('selected');
+          document.getElementById('poolNote').textContent = pool.note;
+        }
+      });
+
+      document.getElementById('walletAddress').placeholder = config.walletPlaceholder;
+      document.getElementById('poolInfoTitle').textContent = config.name + ' Pool Info';
+
+      if (config.note) {
+        const noteEl = document.createElement('div');
+        noteEl.className = 'pool-note';
+        noteEl.textContent = config.note;
+        noteEl.style.marginTop = '8px';
+      }
+    }
+
+    // ---- Pool Mining ----
+
+    async function connectToPool() {
+      const poolUrl = document.getElementById('poolUrl').value.trim();
+      const walletAddress = document.getElementById('walletAddress').value.trim();
+      const workerName = document.getElementById('workerName').value.trim() || 'phone';
+
+      if (!poolUrl) {
+        log('Please enter a pool address', 'error');
+        return;
+      }
+      if (!walletAddress) {
+        log('Please enter your wallet address', 'error');
+        return;
+      }
+
+      mineBtn.disabled = true;
+      mineBtn.textContent = 'Connecting...';
+      log('Connecting to pool ' + poolUrl + '...', selectedCoin);
+
+      try {
+        const data = await api('/pool/connect', {
+          method: 'POST',
+          body: { coin: selectedCoin, poolUrl, walletAddress, workerName },
+        });
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        poolId = data.poolId;
+        isConnected = true;
+
+        log('Connected to ' + selectedCoin.toUpperCase() + ' pool!', 'success');
+        statusBadge.textContent = selectedCoin.toUpperCase() + ' CONNECTED';
+        statusBadge.className = 'status-badge status-connected';
+
+        mineBtn.disabled = false;
+        mineBtn.textContent = 'Start Mining ' + selectedCoin.toUpperCase();
+        mineBtn.className = 'mine-btn start-' + selectedCoin;
+      } catch (err) {
+        log('Connection failed: ' + err.message, 'error');
+        mineBtn.disabled = false;
+        mineBtn.textContent = 'Connect to Pool';
+        mineBtn.className = 'mine-btn start-' + selectedCoin;
+      }
+    }
+
+    async function startPoolMining() {
+      if (!poolId) return;
+
+      try {
+        await api('/pool/' + poolId + '/start', { method: 'POST' });
+        isMining = true;
+
+        mineBtn.textContent = 'Stop Mining';
+        mineBtn.className = 'mine-btn stop';
+        statusBadge.textContent = 'MINING ' + selectedCoin.toUpperCase();
+        statusBadge.className = 'status-badge status-mining';
+
+        log('Mining started!', 'success');
+
+        // Start polling stats and logs
+        statsInterval = setInterval(fetchPoolStats, 2000);
+        logInterval = setInterval(fetchPoolLogs, 1500);
+      } catch (err) {
+        log('Failed to start: ' + err.message, 'error');
+      }
+    }
+
+    async function stopPoolMining() {
+      if (!poolId) return;
+
+      try {
+        await api('/pool/' + poolId + '/stop', { method: 'POST' });
+      } catch (e) { /* ignore */ }
+
+      isMining = false;
+      if (statsInterval) clearInterval(statsInterval);
+      if (logInterval) clearInterval(logInterval);
+
+      mineBtn.textContent = 'Start Mining ' + selectedCoin.toUpperCase();
+      mineBtn.className = 'mine-btn start-' + selectedCoin;
+      statusBadge.textContent = selectedCoin.toUpperCase() + ' CONNECTED';
+      statusBadge.className = 'status-badge status-connected';
+
+      log('Mining stopped', 'error');
+      fetchPoolStats();
+    }
+
+    async function fetchPoolStats() {
+      if (!poolId) return;
+      try {
+        const data = await api('/pool/' + poolId + '/stats');
+        document.getElementById('hashRate').textContent = (data.hashRate || 0).toLocaleString();
+        document.getElementById('blocksMined').textContent = data.sharesSubmitted || 0;
+        document.getElementById('totalRewards').textContent = data.sharesAccepted || 0;
+        document.getElementById('balance').textContent = data.sharesRejected || 0;
+
+        // Pool info card
+        document.getElementById('sharesAccepted').textContent = data.sharesAccepted || 0;
+        document.getElementById('sharesRejected').textContent = data.sharesRejected || 0;
+        document.getElementById('poolDifficulty').textContent = data.difficulty || '-';
+        document.getElementById('currentJob').textContent = data.currentJob
+          ? data.currentJob.substring(0, 12) + '...'
+          : '-';
+      } catch (e) { /* ignore */ }
+    }
+
+    async function fetchPoolLogs() {
+      if (!poolId) return;
+      try {
+        const data = await api('/pool/' + poolId + '/logs?since=' + lastLogTime);
+        if (data.logs && data.logs.length > 0) {
+          data.logs.forEach(entry => {
+            log(entry.message, selectedCoin);
+            lastLogTime = Math.max(lastLogTime, entry.time);
+          });
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    // ---- Local Mining ----
+
+    async function registerLocal() {
       const powerBtn = document.querySelector('.power-btn.active');
       const mode = powerBtn ? powerBtn.dataset.mode : 'balanced';
 
-      const data = await api('/miner/register', {
-        method: 'POST',
-        body: { powerMode: mode },
-      });
+      try {
+        const data = await api('/miner/register', {
+          method: 'POST',
+          body: { powerMode: mode },
+        });
 
-      minerId = data.minerId;
-      log('Registered as miner ' + minerId, 'success');
-      statusBadge.textContent = 'CONNECTED';
-      statusBadge.className = 'status-badge status-connected';
-      mineBtn.disabled = false;
-      mineBtn.textContent = 'Start Mining';
-      mineSingleBtn.disabled = false;
-
-      fetchBlockchainInfo();
-      return data;
-    }
-
-    async function toggleMining() {
-      if (!minerId) return;
-
-      if (!isMining) {
-        await api(`/miner/${minerId}/start`, { method: 'POST' });
-        isMining = true;
-        mineBtn.textContent = 'Stop Mining';
-        mineBtn.className = 'mine-btn stop';
-        mineSingleBtn.disabled = true;
-        statusBadge.textContent = 'MINING';
-        statusBadge.className = 'status-badge status-mining';
-        log('Mining started', 'success');
-
-        statsInterval = setInterval(fetchStats, 2000);
-      } else {
-        const data = await api(`/miner/${minerId}/stop`, { method: 'POST' });
-        isMining = false;
+        minerId = data.minerId;
+        isConnected = true;
+        log('Registered as local miner ' + minerId, 'success');
+        statusBadge.textContent = 'CONNECTED';
+        statusBadge.className = 'status-badge status-connected';
+        mineBtn.disabled = false;
         mineBtn.textContent = 'Start Mining';
         mineBtn.className = 'mine-btn start';
         mineSingleBtn.disabled = false;
-        statusBadge.textContent = 'CONNECTED';
-        statusBadge.className = 'status-badge status-connected';
-        log('Mining stopped', 'error');
 
-        if (statsInterval) clearInterval(statsInterval);
-        fetchStats();
-      }
-    }
-
-    async function mineSingleBlock() {
-      if (!minerId || isMining) return;
-      mineSingleBtn.disabled = true;
-      log('Mining single block...');
-
-      try {
-        const data = await api(`/miner/${minerId}/mine-block`, { method: 'POST' });
-        log(
-          `Block #${data.blockIndex} mined! Hash: ${data.hash.substring(0, 20)}... ` +
-          `(${data.hashesComputed} hashes, ${data.timeMs}ms)`,
-          'success'
-        );
-        fetchStats();
         fetchBlockchainInfo();
       } catch (err) {
-        log('Mining failed: ' + err.message, 'error');
+        log('Registration failed: ' + err.message, 'error');
       }
-
-      mineSingleBtn.disabled = false;
     }
 
-    async function fetchStats() {
+    async function startLocalMining() {
+      if (!minerId) return;
+
+      await api('/miner/' + minerId + '/start', { method: 'POST' });
+      isMining = true;
+      mineBtn.textContent = 'Stop Mining';
+      mineBtn.className = 'mine-btn stop';
+      mineSingleBtn.disabled = true;
+      statusBadge.textContent = 'MINING';
+      statusBadge.className = 'status-badge status-mining';
+      log('Mining started', 'success');
+      statsInterval = setInterval(fetchLocalStats, 2000);
+    }
+
+    async function stopLocalMining() {
+      if (!minerId) return;
+
+      await api('/miner/' + minerId + '/stop', { method: 'POST' });
+      isMining = false;
+      mineBtn.textContent = 'Start Mining';
+      mineBtn.className = 'mine-btn start';
+      mineSingleBtn.disabled = false;
+      statusBadge.textContent = 'CONNECTED';
+      statusBadge.className = 'status-badge status-connected';
+      log('Mining stopped', 'error');
+      if (statsInterval) clearInterval(statsInterval);
+      fetchLocalStats();
+    }
+
+    async function fetchLocalStats() {
       if (!minerId) return;
       try {
-        const data = await api(`/miner/${minerId}/stats`);
+        const data = await api('/miner/' + minerId + '/stats');
         document.getElementById('hashRate').textContent = data.hashRate.toLocaleString();
         document.getElementById('blocksMined').textContent = data.blocksMinedTotal;
         document.getElementById('totalRewards').textContent = data.totalRewards;
         document.getElementById('balance').textContent = data.balance;
-      } catch (e) { /* ignore fetch errors */ }
+      } catch (e) { /* ignore */ }
     }
 
     async function fetchBlockchainInfo() {
@@ -368,26 +745,73 @@
         document.getElementById('difficulty').textContent = data.difficulty;
         document.getElementById('reward').textContent = data.reward;
         document.getElementById('activeMiners').textContent = data.activeMiners;
-      } catch (e) { /* ignore fetch errors */ }
+      } catch (e) { /* ignore */ }
+    }
+
+    // ---- Unified Controls ----
+
+    async function toggleMining() {
+      if (selectedCoin === 'btc' || selectedCoin === 'xmr') {
+        if (!isConnected) {
+          await connectToPool();
+        } else if (!isMining) {
+          await startPoolMining();
+        } else {
+          await stopPoolMining();
+        }
+      } else if (selectedCoin === 'local') {
+        if (!isMining) {
+          await startLocalMining();
+        } else {
+          await stopLocalMining();
+        }
+      }
+    }
+
+    async function stopMining() {
+      if (selectedCoin === 'btc' || selectedCoin === 'xmr') {
+        await stopPoolMining();
+      } else {
+        await stopLocalMining();
+      }
+    }
+
+    async function mineSingleBlock() {
+      if (!minerId || isMining || selectedCoin !== 'local') return;
+      mineSingleBtn.disabled = true;
+      log('Mining single block...');
+
+      try {
+        const data = await api('/miner/' + minerId + '/mine-block', { method: 'POST' });
+        log(
+          'Block #' + data.blockIndex + ' mined! Hash: ' + data.hash.substring(0, 20) + '... ' +
+          '(' + data.hashesComputed + ' hashes, ' + data.timeMs + 'ms)',
+          'success'
+        );
+        fetchLocalStats();
+        fetchBlockchainInfo();
+      } catch (err) {
+        log('Mining failed: ' + err.message, 'error');
+      }
+
+      mineSingleBtn.disabled = false;
     }
 
     async function setPowerMode(mode) {
       document.querySelectorAll('.power-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+      document.querySelector('[data-mode="' + mode + '"]').classList.add('active');
 
       if (minerId) {
-        await api(`/miner/${minerId}/power-mode`, {
+        await api('/miner/' + minerId + '/power-mode', {
           method: 'POST',
           body: { mode },
         });
-        log(`Power mode set to ${mode}`, 'success');
+        log('Power mode set to ' + mode, 'success');
       }
     }
 
-    // Auto-connect on load
-    register().catch(err => {
-      log('Connection failed: ' + err.message, 'error');
-    });
+    // ---- Init ----
+    log('Select a coin to begin mining.');
   </script>
 </body>
 </html>
