@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Miner">
+  <title>Mining Machine</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      background: #000;
+      color: #fff;
+      min-height: 100vh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+      padding-top: max(16px, env(safe-area-inset-top));
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    .header {
+      text-align: center;
+      padding: 20px 0;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .header .subtitle {
+      font-size: 14px;
+      color: #888;
+      margin-top: 4px;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    .status-idle { background: #333; color: #888; }
+    .status-mining { background: #0a3d0a; color: #4ade80; }
+    .status-connected { background: #1a1a3d; color: #818cf8; }
+
+    .card {
+      background: #111;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 12px 0;
+      border: 1px solid #222;
+    }
+    .card-title {
+      font-size: 13px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .stat-item .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-item .stat-label {
+      font-size: 12px;
+      color: #666;
+      margin-top: 2px;
+    }
+    .stat-highlight { color: #4ade80; }
+
+    .power-modes {
+      display: flex;
+      gap: 8px;
+    }
+    .power-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border: 2px solid #333;
+      border-radius: 12px;
+      background: transparent;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .power-btn.active {
+      border-color: #4ade80;
+      background: #0a3d0a;
+      color: #4ade80;
+    }
+    .power-btn .icon { font-size: 20px; display: block; margin-bottom: 4px; }
+
+    .mine-btn {
+      width: 100%;
+      padding: 18px;
+      border: none;
+      border-radius: 16px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      margin-top: 12px;
+    }
+    .mine-btn.start {
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      color: #000;
+    }
+    .mine-btn.stop {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+    }
+    .mine-btn:disabled {
+      background: #333;
+      color: #666;
+    }
+    .mine-btn:active {
+      transform: scale(0.98);
+    }
+
+    .mine-single-btn {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #333;
+      border-radius: 12px;
+      background: transparent;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      margin-top: 8px;
+    }
+    .mine-single-btn:active { background: #222; }
+    .mine-single-btn:disabled { color: #444; }
+
+    .log {
+      max-height: 200px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .log-entry {
+      font-family: 'SF Mono', 'Menlo', monospace;
+      font-size: 11px;
+      color: #888;
+      padding: 4px 0;
+      border-bottom: 1px solid #1a1a1a;
+      word-break: break-all;
+    }
+    .log-entry.success { color: #4ade80; }
+    .log-entry.error { color: #ef4444; }
+
+    .chain-info {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+    .chain-info span:first-child { color: #666; font-size: 13px; }
+    .chain-info span:last-child { font-weight: 600; font-size: 13px; }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: #000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Mining Machine</h1>
+    <p class="subtitle">iPhone Mining Client</p>
+    <div id="statusBadge" class="status-badge status-idle">IDLE</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Mining Stats</div>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-value stat-highlight" id="hashRate">0</div>
+        <div class="stat-label">Hash/sec</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="blocksMined">0</div>
+        <div class="stat-label">Blocks Mined</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value stat-highlight" id="totalRewards">0</div>
+        <div class="stat-label">Rewards Earned</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="balance">0</div>
+        <div class="stat-label">Balance</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Power Mode</div>
+    <div class="power-modes">
+      <button class="power-btn" data-mode="low" onclick="setPowerMode('low')">
+        <span class="icon">&#x1F50B;</span>Low
+      </button>
+      <button class="power-btn active" data-mode="balanced" onclick="setPowerMode('balanced')">
+        <span class="icon">&#x2696;</span>Balanced
+      </button>
+      <button class="power-btn" data-mode="performance" onclick="setPowerMode('performance')">
+        <span class="icon">&#x26A1;</span>Max
+      </button>
+    </div>
+  </div>
+
+  <button id="mineBtn" class="mine-btn start" onclick="toggleMining()" disabled>
+    Connect to Start
+  </button>
+  <button id="mineSingleBtn" class="mine-single-btn" onclick="mineSingleBlock()" disabled>
+    Mine Single Block
+  </button>
+
+  <div class="card">
+    <div class="card-title">Blockchain</div>
+    <div class="chain-info">
+      <span>Chain Length</span>
+      <span id="chainLength">-</span>
+    </div>
+    <div class="chain-info">
+      <span>Difficulty</span>
+      <span id="difficulty">-</span>
+    </div>
+    <div class="chain-info">
+      <span>Block Reward</span>
+      <span id="reward">-</span>
+    </div>
+    <div class="chain-info">
+      <span>Active Miners</span>
+      <span id="activeMiners">-</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Mining Log</div>
+    <div class="log" id="miningLog"></div>
+  </div>
+
+  <script>
+    let minerId = null;
+    let isMining = false;
+    let statsInterval = null;
+
+    const mineBtn = document.getElementById('mineBtn');
+    const mineSingleBtn = document.getElementById('mineSingleBtn');
+    const statusBadge = document.getElementById('statusBadge');
+
+    function log(message, type = '') {
+      const logEl = document.getElementById('miningLog');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry' + (type ? ' ' + type : '');
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.prepend(entry);
+      if (logEl.children.length > 50) logEl.removeChild(logEl.lastChild);
+    }
+
+    async function api(path, options = {}) {
+      const res = await fetch('/api' + path, {
+        headers: { 'Content-Type': 'application/json' },
+        ...options,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      });
+      return res.json();
+    }
+
+    async function register() {
+      const powerBtn = document.querySelector('.power-btn.active');
+      const mode = powerBtn ? powerBtn.dataset.mode : 'balanced';
+
+      const data = await api('/miner/register', {
+        method: 'POST',
+        body: { powerMode: mode },
+      });
+
+      minerId = data.minerId;
+      log('Registered as miner ' + minerId, 'success');
+      statusBadge.textContent = 'CONNECTED';
+      statusBadge.className = 'status-badge status-connected';
+      mineBtn.disabled = false;
+      mineBtn.textContent = 'Start Mining';
+      mineSingleBtn.disabled = false;
+
+      fetchBlockchainInfo();
+      return data;
+    }
+
+    async function toggleMining() {
+      if (!minerId) return;
+
+      if (!isMining) {
+        await api(`/miner/${minerId}/start`, { method: 'POST' });
+        isMining = true;
+        mineBtn.textContent = 'Stop Mining';
+        mineBtn.className = 'mine-btn stop';
+        mineSingleBtn.disabled = true;
+        statusBadge.textContent = 'MINING';
+        statusBadge.className = 'status-badge status-mining';
+        log('Mining started', 'success');
+
+        statsInterval = setInterval(fetchStats, 2000);
+      } else {
+        const data = await api(`/miner/${minerId}/stop`, { method: 'POST' });
+        isMining = false;
+        mineBtn.textContent = 'Start Mining';
+        mineBtn.className = 'mine-btn start';
+        mineSingleBtn.disabled = false;
+        statusBadge.textContent = 'CONNECTED';
+        statusBadge.className = 'status-badge status-connected';
+        log('Mining stopped', 'error');
+
+        if (statsInterval) clearInterval(statsInterval);
+        fetchStats();
+      }
+    }
+
+    async function mineSingleBlock() {
+      if (!minerId || isMining) return;
+      mineSingleBtn.disabled = true;
+      log('Mining single block...');
+
+      try {
+        const data = await api(`/miner/${minerId}/mine-block`, { method: 'POST' });
+        log(
+          `Block #${data.blockIndex} mined! Hash: ${data.hash.substring(0, 20)}... ` +
+          `(${data.hashesComputed} hashes, ${data.timeMs}ms)`,
+          'success'
+        );
+        fetchStats();
+        fetchBlockchainInfo();
+      } catch (err) {
+        log('Mining failed: ' + err.message, 'error');
+      }
+
+      mineSingleBtn.disabled = false;
+    }
+
+    async function fetchStats() {
+      if (!minerId) return;
+      try {
+        const data = await api(`/miner/${minerId}/stats`);
+        document.getElementById('hashRate').textContent = data.hashRate.toLocaleString();
+        document.getElementById('blocksMined').textContent = data.blocksMinedTotal;
+        document.getElementById('totalRewards').textContent = data.totalRewards;
+        document.getElementById('balance').textContent = data.balance;
+      } catch (e) { /* ignore fetch errors */ }
+    }
+
+    async function fetchBlockchainInfo() {
+      try {
+        const data = await api('/blockchain/info');
+        document.getElementById('chainLength').textContent = data.chainLength;
+        document.getElementById('difficulty').textContent = data.difficulty;
+        document.getElementById('reward').textContent = data.reward;
+        document.getElementById('activeMiners').textContent = data.activeMiners;
+      } catch (e) { /* ignore fetch errors */ }
+    }
+
+    async function setPowerMode(mode) {
+      document.querySelectorAll('.power-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+
+      if (minerId) {
+        await api(`/miner/${minerId}/power-mode`, {
+          method: 'POST',
+          body: { mode },
+        });
+        log(`Power mode set to ${mode}`, 'success');
+      }
+    }
+
+    // Auto-connect on load
+    register().catch(err => {
+      log('Connection failed: ' + err.message, 'error');
+    });
+  </script>
+</body>
+</html>

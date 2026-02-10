@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "mine": "node miningServer.js",
     "test": "jest"
   },
   "keywords": [
