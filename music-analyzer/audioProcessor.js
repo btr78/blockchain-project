@@ -232,14 +232,14 @@ export function applyMixerSettings(samples, numChannels, sampleRate, rec) {
   // Work on a copy so we don't mutate the original
   const out = new Float64Array(samples);
 
-  // 1. Input gain
+  // 1. Input gain (skip if NaN/Infinity, e.g. when input is silence)
   const gainDB = rec.gain.inputGainDB;
-  if (Math.abs(gainDB) > 0.1) {
+  if (Number.isFinite(gainDB) && Math.abs(gainDB) > 0.1) {
     applyGain(out, gainDB);
   }
 
   // 2. Parametric EQ (apply each band as a biquad filter)
-  for (const band of rec.eq) {
+  for (const band of rec.eq.filter(b => Number.isFinite(b.gainDB))) {
     let coeffs;
 
     if (band.band === 'subBass' || band.band === 'bass') {

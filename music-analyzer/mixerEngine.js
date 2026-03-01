@@ -64,7 +64,8 @@ function recommendEQ(bands) {
     const target  = midLevel + IDEAL_BALANCE[band];
     const diff    = actual - target; // positive = too loud, needs cut
 
-    if (Math.abs(diff) < 1.5) continue; // within tolerance, skip
+    // Skip if values are non-finite (e.g. silence or inaudible band)
+    if (!Number.isFinite(diff) || Math.abs(diff) < 1.5) continue;
 
     const gainDB   = Math.max(-12, Math.min(12, -Math.round(diff * 10) / 10));
     const action   = gainDB > 0 ? 'Boost' : 'Cut';
